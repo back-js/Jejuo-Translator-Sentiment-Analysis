@@ -1,0 +1,85 @@
+{% extends 'layout.html' %}
+{% block text %}
+	<div id="cnt-bg">
+		<select class="langselect" onchange="location = this.value;">
+			<option{%if type=="ne_en"%} selected{%endif%} value="ne-en">제주어 -> 표준어</option>
+			<option{%if type=="en_ne"%} selected{%endif%} value="en-ne">표준어 -> 제주어</option>
+		</select>
+		{%if type=="en_ne"%}<button class="text" id="listen">Use Speech-to-Text</button><img id="loader" src="{{url_for('static', filename="810.gif" )}}"/>{%endif%}
+	<div id="container">
+		<textarea class="transbox" id="srclang" placeholder="번역할 내용을 입력하세요." autofocus></textarea>
+		<textarea class="transbox" id="targetlang" readonly></textarea><textarea id="sentimentlang" readonly="readonly" cols="183" rows="3"></textarea>
+        
+		<div class="bottom-tool"><button id= 'sentiment' class="text">감정분석 진행</button><a href="http://www.abrain.co.kr/" target="_blank"><button class="text">Abrain</button></a><button class="text">Back</button></div>
+	</div>
+	</div>
+{% endblock %}
+{% block javascript %}
+<script type="text/javascript">	
+	let typingTimer;               
+	let doneTypingInterval = 100; 
+	let srclang = document.querySelector('#srclang');
+
+	srclang.addEventListener('keyup', () => {
+		clearTimeout(typingTimer);
+		if (srclang.value.trim() && srclang.value.length > 0) {
+		    typingTimer = setTimeout(doneTyping, doneTypingInterval);
+		}
+	});
+
+	function doneTyping () {
+		document.querySelector("#targetlang").innerHTML = "[번역중...]"
+		fetch("/translate"+{%if type=="en_ne"%}"/en-ne/"{%else%}"/ne-en/"{%endif%}+ srclang.value).then((r)=>r.text()).then((text)=>{
+			document.querySelector("#targetlang").innerHTML = text;
+            let targetlang = document.querySelector("#targetlang");
+		}).catch(function(error){alert(error)});
+	};
+
+    
+	document.querySelector("#sentiment").addEventListener('click', doneTyping2)
+	
+	function doneTyping2 () {
+
+        document.querySelector("#sentimentlang").innerHTML = "[감정분석중...]";
+        
+		fetch("/translate"+{%if type=="en_ne"%}"/en-ne/"{%else%}"/ne-en/"{%endif%}+ "sentiment/"+ targetlang.value).then((r)=>r.text()).then((text)=>{
+			document.querySelector("#sentimentlang").innerHTML = text
+		}).catch(function(error){alert(error)});
+	};
+
+</script>{%if type=="ne_en"%}
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	<script type="text/javascript">
+
+      // Load the Google Transliterate API
+      google.load("elements", "1", {
+            packages: "transliteration"
+          });
+
+      function onLoad() {
+        var options = {
+            sourceLanguage:
+                google.elements.transliteration.LanguageCode.ENGLISH,
+            destinationLanguage:
+                [google.elements.transliteration.LanguageCode.NEPALI],
+            shortcutKey: 'ctrl+g',
+            transliterationEnabled: true
+        };
+
+        // Create an instance on TransliterationControl with the required
+        // options.
+        var control =
+            new google.elements.transliteration.TransliterationControl(options);
+
+        // Enable transliteration in the textbox with id
+        // 'transliterateTextarea'.
+        control.makeTransliteratable(['srclang'], {
+	      adjustElementStyle: false,
+	      adjustElementDirection: true
+	    });
+
+	    document.querySelector('#srclang').style = "font-size:24px;font-family:Roboto, Open Sans, Segoe UI, Georgia;line-height:auto;";
+      }
+      google.setOnLoadCallback(onLoad);
+ </script>{% endif %}
+{% endblock %}

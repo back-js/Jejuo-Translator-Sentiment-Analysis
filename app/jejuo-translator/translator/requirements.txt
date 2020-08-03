@@ -1,0 +1,10 @@
+flask
+torch
+fairseq
+sentencepiece
+sacremoses
+indic_nlp_library
+SpeechRecognition
+flask_ngrok
+konlpy
+transformers
